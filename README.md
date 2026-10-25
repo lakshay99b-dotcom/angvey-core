@@ -3,6 +3,21 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
+## Day 4 (25 Oct 2026) — Client-Scoped Memory + Unfinished Resume
+Multi-client freelancers no longer mix contexts or abandon 80% work.
+
+**Problem attacked:** Solopreneurs juggling 5–10 clients pay a hidden “context tax” reconstructing brand voice, pricing rules and past decisions in every new AI session. Shared memory mixes clients. Unfinished tasks (the 80% that deliver zero value) get abandoned. Few lightweight tools give client-isolated, auditable memory + one-click resume.
+
+**What shipped:**
+- Client/Project tagging on tasks and memories
+- Scoped recall (client-specific first, then global)
+- Unfinished / Resume Queue panel with one-click resume
+- Client filter across tasks + memory
+- Decision memories auto-tagged to client
+- Storage key bumped to v4 (fresh start recommended for clean data)
+
+Inspired by multi-agent memory patterns in ruflo / orca / paperclip and real solopreneur pain around context switching + unfinished work. Original lightweight implementation — no external deps.
+
 ## Day 3 (24 Oct 2026) — Memory Bank + Consistency Verifier
 Persistent task agent now carries cross-task memory so solopreneurs stop re-explaining context.
 
@@ -51,7 +66,8 @@ npm run dev
 ```
 
 ## Deploy
-Connect this repo to Vercel — Next.js is auto-detected. Existing project: angvey-core.
+Connect this repo to Vercel — Next.js is auto-detected. Existing project: angvey-core.  
+Expected production URL pattern: https://angvey-core.vercel.app (or your custom domain).
 
 ## Mission
 1. Continuously scan trending open-source AI libraries.
