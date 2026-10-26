@@ -3,6 +3,20 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
+## Day 5 (26 Oct 2026) — Priority Focus Queue + Client Summaries
+Solopreneurs stop drowning in unfinished multi-client work.
+
+**Problem attacked:** Attention residue and the 80/0 rule — unfinished tasks (especially across clients) deliver zero value and compound cognitive load. Few lightweight tools rank open work by age/urgency and give a one-glance client summary while keeping memory isolated.
+
+**What shipped:**
+- Priority scoring on unfinished tasks (age + issues + client presence)
+- Priority Focus Queue sorted by score, with Focus Top 3 mode
+- Client Summary panel (open tasks + memory counts per client)
+- Storage key bumped to v5
+- createdAt timestamps for accurate aging
+
+Inspired by agent memory patterns (claude-mem, hindsight) and real solopreneur pain around unfinished work + context switching. Original lightweight implementation — no external deps.
+
 ## Day 4 (25 Oct 2026) — Client-Scoped Memory + Unfinished Resume
 Multi-client freelancers no longer mix contexts or abandon 80% work.
 
@@ -67,7 +81,7 @@ npm run dev
 
 ## Deploy
 Connect this repo to Vercel — Next.js is auto-detected. Existing project: angvey-core.  
-Expected production URL pattern: https://angvey-core.vercel.app (or your custom domain).
+Production URL: https://angvey-core.vercel.app
 
 ## Mission
 1. Continuously scan trending open-source AI libraries.

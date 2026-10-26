@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v4';
+const STORAGE_KEY = 'angvey-finisher-v5';
 
 export default function Home() {
   const [goal, setGoal] = useState('');
@@ -15,6 +15,7 @@ export default function Home() {
   const [memoryClient, setMemoryClient] = useState('');
   const [memoryFilter, setMemoryFilter] = useState('');
   const [clientFilter, setClientFilter] = useState('');
+  const [focusMode, setFocusMode] = useState(false);
 
   useEffect(() => {
     try {
@@ -89,11 +90,12 @@ export default function Home() {
       status: 'in_progress',
       notes: '',
       issues: [],
-      recalled: relevant.map(r => r.content)
+      recalled: relevant.map(r => r.content),
+      createdAt: new Date().toISOString()
     };
     setTasks(prev => [newTask, ...prev]);
     setGoal('');
-    addLog(`New task started: "${newTask.goal}" ${client ? '(client: ' + client + ')' : ''} | Recalled ${relevant.length} memories`);
+    addLog(`New task started: \"${newTask.goal}\" ${client ? '(client: ' + client + ')' : ''} | Recalled ${relevant.length} memories`);
     if (relevant.length) addLog(`Recalled: ${relevant.map(r => r.content.slice(0,40)).join('; ')}`);
     setTimeout(() => advanceStep(newTask.id, 0), 700);
   };
@@ -150,7 +152,7 @@ export default function Home() {
     const note = feedback[taskId] || '';
     setTasks(prev => prev.map(t => {
       if (t.id !== taskId) return t;
-      const decision = `Completed "${t.goal}"${note ? ' with note: ' + note.slice(0, 100) : ''}`;
+      const decision = `Completed \"${t.goal}\"${note ? ' with note: ' + note.slice(0, 100) : ''}`;
       addMemory(decision, 'decision', `task-${taskId}`, t.client || '');
       return {
         ...t,
@@ -194,18 +196,36 @@ export default function Home() {
 
   const uniqueClients = [...new Set(memory.map(m => m.client).filter(Boolean).concat(tasks.map(t => t.client).filter(Boolean)))];
 
-  const unfinished = tasks.filter(t => t.status !== 'completed');
-  const filteredTasks = tasks.filter(t => !clientFilter || (t.client && t.client.toLowerCase().includes(clientFilter.toLowerCase())) || !t.client);
+  const getPriority = (task) => {
+    if (task.status === 'completed') return 0;
+    const ageHours = (Date.now() - new Date(task.createdAt || task.id).getTime()) / 3600000;
+    const issueBoost = (task.issues?.length || 0) * 8;
+    const clientBoost = task.client ? 3 : 0;
+    return Math.round(ageHours + issueBoost + clientBoost);
+  };
+
+  const unfinished = tasks
+    .filter(t => t.status !== 'completed')
+    .map(t => ({ ...t, priority: getPriority(t) }))
+    .sort((a, b) => b.priority - a.priority);
+
+  const displayTasks = focusMode ? unfinished.slice(0, 3) : tasks.filter(t => !clientFilter || (t.client && t.client.toLowerCase().includes(clientFilter.toLowerCase())) || !t.client);
 
   const filteredMemory = memory.filter(m => 
     (!memoryFilter || m.content.toLowerCase().includes(memoryFilter.toLowerCase()) || m.type.includes(memoryFilter.toLowerCase())) &&
     (!clientFilter || (m.client && m.client.toLowerCase().includes(clientFilter.toLowerCase())) || !m.client)
   );
 
+  const clientSummaries = uniqueClients.map(c => ({
+    name: c,
+    open: unfinished.filter(t => t.client && t.client.toLowerCase() === c.toLowerCase()).length,
+    memories: memory.filter(m => m.client && m.client.toLowerCase() === c.toLowerCase()).length
+  })).filter(s => s.open > 0 || s.memories > 0);
+
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
-      <p className="subtitle">Durable agent + Client-scoped Memory Bank for solopreneurs — isolates multi-client context, recalls past decisions, resumes unfinished work, full audit.</p>
+      <p className="subtitle">Durable agent + Client-scoped Memory + Priority Focus Queue — kills attention residue by ranking unfinished work and isolating multi-client context.</p>
 
       <div className="card">
         <h2 style={{marginBottom: '0.75rem'}}>Start a task</h2>
@@ -223,12 +243,30 @@ export default function Home() {
         <button onClick={createTask}>Launch Agent</button>
       </div>
 
+      {clientSummaries.length > 0 && (
+        <div className="card">
+          <h3 style={{marginBottom: '0.5rem'}}>Client Summary</h3>
+          {clientSummaries.map(s => (
+            <div key={s.name} className="small" style={{marginBottom: '0.3rem'}}>
+              <strong>{s.name}</strong>: {s.open} open task(s) · {s.memories} memories
+            </div>
+          ))}
+        </div>
+      )}
+
       {unfinished.length > 0 && (
         <div className="card">
-          <h3 style={{marginBottom: '0.5rem'}}>Unfinished / Resume Queue <span className="small">({unfinished.length} open)</span></h3>
-          {unfinished.map(t => (
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem'}}>
+            <h3 style={{margin: 0}}>Priority Focus Queue <span className="small">({unfinished.length} open)</span></h3>
+            <button className="secondary" style={{padding: '0.3rem 0.6rem', fontSize: '0.75rem'}} onClick={() => setFocusMode(!focusMode)}>
+              {focusMode ? 'Show All' : 'Focus Top 3'}
+            </button>
+          </div>
+          {(focusMode ? unfinished.slice(0, 3) : unfinished).map(t => (
             <div key={t.id} className="small" style={{marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-              <span>{t.goal.slice(0, 70)}{t.client ? ` [${t.client}]` : ''} — {t.status.replace('_', ' ')}</span>
+              <span>
+                <span style={{color: t.priority > 10 ? '#f87171' : '#fbbf24'}}>★{t.priority}</span> {t.goal.slice(0, 60)}{t.client ? ` [${t.client}]` : ''} — {t.status.replace('_', ' ')}
+              </span>
               {t.status !== 'completed' && <button className="secondary" style={{padding: '0.3rem 0.6rem', fontSize: '0.75rem'}} onClick={() => resumeTask(t.id)}>Resume</button>}
             </div>
           ))}
@@ -243,10 +281,11 @@ export default function Home() {
         />
       </div>
 
-      {filteredTasks.map(task => (
+      {displayTasks.map(task => (
         <div key={task.id} className="card">
           <strong>{task.goal}</strong>
           {task.client && <span className="small" style={{marginLeft: '0.5rem', color: '#38bdf8'}}>[{task.client}]</span>}
+          {task.priority !== undefined && <span className="small" style={{marginLeft: '0.5rem', color: '#fbbf24'}}>Priority: {task.priority}</span>}
           <div style={{margin: '0.5rem 0', fontSize: '0.875rem', color: '#94a3b8'}}>
             Status: {task.status.replace('_', ' ')}
             {task.recalled && task.recalled.length > 0 && (
