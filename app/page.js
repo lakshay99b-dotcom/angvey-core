@@ -1,20 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v7';
+const STORAGE_KEY = 'angvey-finisher-v8';
 
 export default function Home() {
   const [goal, setGoal] = useState('');
   const [client, setClient] = useState('');
+  const [priority, setPriority] = useState('normal');
   const [tasks, setTasks] = useState([]);
   const [log, setLog] = useState([]);
   const [memory, setMemory] = useState([]);
   const [newMemory, setNewMemory] = useState('');
   const [memoryClient, setMemoryClient] = useState('');
+  const [memoryType, setMemoryType] = useState('fact');
   const [clientFilter, setClientFilter] = useState('');
   const [focusMode, setFocusMode] = useState(false);
   const [handoffTask, setHandoffTask] = useState(null);
+  const [memorySearch, setMemorySearch] = useState('');
+  const fileRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -38,32 +42,41 @@ export default function Home() {
     }
   }, [tasks, log, memory]);
 
-  const addLog = (msg) => setLog(prev => [`${new Date().toLocaleTimeString()}: ${msg}`, ...prev].slice(0, 40));
+  const addLog = (msg) => setLog(prev => [`${new Date().toLocaleTimeString()}: ${msg}`, ...prev].slice(0, 50));
 
   const addMemory = (content, type = 'fact', source = 'manual', memClient = '') => {
     if (!content.trim()) return;
     const entry = {
-      id: Date.now(),
+      id: Date.now() + Math.random(),
       type,
       content: content.trim(),
       client: memClient.trim() || null,
       source,
       ts: new Date().toISOString()
     };
-    setMemory(prev => [entry, ...prev].slice(0, 120));
+    setMemory(prev => [entry, ...prev].slice(0, 200));
     addLog(`Memory (${type}${memClient ? '/' + memClient : ''}): ${content.slice(0, 50)}`);
+  };
+
+  const deleteMemory = (id) => {
+    setMemory(prev => prev.filter(m => m.id !== id));
+    addLog(`Deleted memory ${id}`);
   };
 
   const recallRelevant = (goalText, taskClient) => {
     const keywords = goalText.toLowerCase().split(/\W+/).filter(w => w.length > 3);
-    const clientMatches = memory.filter(m =>
-      m.client && taskClient && m.client.toLowerCase() === taskClient.toLowerCase() &&
-      (keywords.length === 0 || keywords.some(k => m.content.toLowerCase().includes(k)))
-    );
-    const globalMatches = memory.filter(m =>
-      !m.client && (keywords.length === 0 || keywords.some(k => m.content.toLowerCase().includes(k)))
-    );
-    return [...clientMatches, ...globalMatches].slice(0, 8);
+    const score = (m) => {
+      let s = 0;
+      if (taskClient && m.client && m.client.toLowerCase() === taskClient.toLowerCase()) s += 5;
+      keywords.forEach(k => { if (m.content.toLowerCase().includes(k)) s += 2; });
+      if (!m.client) s += 1;
+      return s;
+    };
+    return memory
+      .map(m => ({ ...m, score: score(m) }))
+      .filter(m => m.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
   };
 
   const createTask = () => {
@@ -80,6 +93,7 @@ export default function Home() {
       id: Date.now(),
       goal: goal.trim(),
       client: client.trim() || null,
+      priority,
       steps: steps.map((s, i) => ({
         id: i,
         text: s,
@@ -91,15 +105,15 @@ export default function Home() {
       issues: [],
       recalled: relevant.map(r => r.content),
       createdAt: new Date().toISOString(),
-      priority: 'normal'
     };
     setTasks(prev => [newTask, ...prev]);
     setGoal('');
-    addLog(`Started: "${newTask.goal}"${client ? ` [${client}]` : ''} | recalled ${relevant.length}`);
+    addLog(`Started: "${newTask.goal}"${client ? ` [${client}]` : ''} | prio ${priority} | recalled ${relevant.length}`);
     setTimeout(() => advanceStep(newTask.id, 0), 600);
   };
 
   const advanceStep = (taskId, stepIdx) => {
+    if (stepIdx < 0) return;
     setTasks(prev => prev.map(t => {
       if (t.id !== taskId) return t;
       const steps = t.steps.map((s, i) => {
@@ -121,8 +135,8 @@ export default function Home() {
     const completed = task.steps.filter(s => s.status === 'done').map(s => `- ${s.text}`).join('\n') || '- None yet';
     const remaining = task.steps.filter(s => s.status !== 'done').map(s => `- ${s.text} (${s.status})`).join('\n') || '- All done';
     const clientMem = memory.filter(m => m.client && task.client && m.client.toLowerCase() === task.client.toLowerCase())
-      .slice(0, 6).map(m => `- [${m.type}] ${m.content}`).join('\n') || '- None';
-    const prompt = `# HANDOFF PROMPT — ${task.client || 'No Client'}
+      .slice(0, 8).map(m => `- [${m.type}] ${m.content}`).join('\n') || '- None';
+    const prompt = `# HANDOFF PROMPT — ${task.client || 'No Client'} | Priority: ${task.priority || 'normal'}
 
 **Goal:** ${task.goal}
 
@@ -140,7 +154,7 @@ ${remaining}
 ${clientMem}
 
 **Instructions for receiving AI:**
-Continue from the exact remaining steps. Stay in character for this client. Prefer atomic progress. Ask only if blocked. Output ready-to-use deliverable when possible.
+Continue from the exact remaining steps. Stay in character for this client. Prefer atomic progress. Ask only if blocked. Output ready-to-use deliverable when possible. Respect priority.
 `.trim();
     navigator.clipboard.writeText(prompt).then(() => {
       addLog(`Handoff copied for: ${task.goal.slice(0, 40)}`);
@@ -150,43 +164,82 @@ Continue from the exact remaining steps. Stay in character for this client. Pref
   };
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify({ tasks, memory, log, exported: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ tasks, memory, log, exported: new Date().toISOString(), version: 'v8' }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `angvey-finisher-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
   };
 
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.tasks) setTasks(data.tasks);
+        if (data.memory) setMemory(data.memory);
+        if (data.log) setLog(data.log);
+        addLog('Imported state from JSON');
+      } catch (err) {
+        addLog('Import failed: invalid JSON');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const filteredTasks = tasks.filter(t => !clientFilter || (t.client || '').toLowerCase().includes(clientFilter.toLowerCase()));
   const focusTasks = focusMode ? filteredTasks.filter(t => t.status !== 'done').slice(0, 3) : filteredTasks;
+  const sortedFocus = [...focusTasks].sort((a, b) => {
+    const prio = { high: 3, normal: 2, low: 1 };
+    return (prio[b.priority] || 2) - (prio[a.priority] || 2);
+  });
 
   const uniqueClients = [...new Set(tasks.map(t => t.client).filter(Boolean))];
+  const openCount = tasks.filter(t => t.status !== 'done').length;
+  const doneToday = tasks.filter(t => t.status === 'done' && new Date(t.createdAt).toDateString() === new Date().toDateString()).length;
+
+  const filteredMemory = memory.filter(m =>
+    !memorySearch || m.content.toLowerCase().includes(memorySearch.toLowerCase()) ||
+    (m.client && m.client.toLowerCase().includes(memorySearch.toLowerCase()))
+  );
 
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
-      <p className="subtitle">Persistent task + memory agent for solopreneurs. Kill context-switch tax. One-click handoffs.</p>
+      <p className="subtitle">Persistent task + memory agent for solopreneurs. Kill context-switch tax. One-click handoffs across any AI.</p>
 
       <div className="card">
         <h3 style={{ marginBottom: '0.75rem' }}>Start / Resume a Goal</h3>
         <input placeholder="Goal or next deliverable (e.g. 'Draft 3 LinkedIn posts for Acme')" value={goal} onChange={e => setGoal(e.target.value)} />
-        <input placeholder="Client (optional, scopes memory)" value={client} onChange={e => setClient(e.target.value)} />
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input style={{ flex: 1 }} placeholder="Client (optional, scopes memory)" value={client} onChange={e => setClient(e.target.value)} />
+          <select value={priority} onChange={e => setPriority(e.target.value)} style={{ width: '120px' }}>
+            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
         <button onClick={createTask}>Create Task + Auto-Recall Memory</button>
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <input style={{ width: '200px', margin: 0 }} placeholder="Filter by client" value={clientFilter} onChange={e => setClientFilter(e.target.value)} />
+        <input style={{ width: '180px', margin: 0 }} placeholder="Filter by client" value={clientFilter} onChange={e => setClientFilter(e.target.value)} />
         <button className="secondary" onClick={() => setFocusMode(!focusMode)}>{focusMode ? 'Show All' : 'Focus Mode (top 3 open)'}</button>
         <button className="secondary" onClick={exportData}>Export JSON</button>
-        <span className="small">{tasks.filter(t => t.status !== 'done').length} open · {memory.length} memories · {uniqueClients.length} clients</span>
+        <button className="secondary" onClick={() => fileRef.current?.click()}>Import JSON</button>
+        <input type="file" ref={fileRef} accept=".json" style={{ display: 'none' }} onChange={handleImport} />
+        <span className="small">{openCount} open · {doneToday} done today · {memory.length} memories · {uniqueClients.length} clients</span>
       </div>
 
-      {focusTasks.map(task => (
+      {sortedFocus.map(task => (
         <div key={task.id} className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <strong>{task.goal}</strong>
               {task.client && <span className="small"> · {task.client}</span>}
+              <span className={`prio prio-${task.priority || 'normal'}`}>{task.priority || 'normal'}</span>
               <div className="small">Status: {task.status} · {task.recalled?.length || 0} memories recalled</div>
             </div>
             <button onClick={() => generateHandoff(task)} style={{ background: handoffTask === task.id ? '#4ade80' : undefined }}>
@@ -210,12 +263,23 @@ Continue from the exact remaining steps. Stay in character for this client. Pref
 
       <div className="card">
         <h3 style={{ marginBottom: '0.75rem' }}>Client Memory</h3>
+        <input placeholder="Search memories..." value={memorySearch} onChange={e => setMemorySearch(e.target.value)} />
         <input placeholder="New memory / fact / preference" value={newMemory} onChange={e => setNewMemory(e.target.value)} />
-        <input placeholder="Client (blank = global)" value={memoryClient} onChange={e => setMemoryClient(e.target.value)} />
-        <button onClick={() => { addMemory(newMemory, 'fact', 'manual', memoryClient); setNewMemory(''); }}>Add Memory</button>
-        <div className="log" style={{ marginTop: '1rem' }}>
-          {memory.slice(0, 15).map(m => (
-            <div key={m.id} className="small">[{m.client || 'global'}] {m.content}</div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input style={{ flex: 1 }} placeholder="Client (blank = global)" value={memoryClient} onChange={e => setMemoryClient(e.target.value)} />
+          <select value={memoryType} onChange={e => setMemoryType(e.target.value)} style={{ width: '100px' }}>
+            <option value="fact">Fact</option>
+            <option value="pref">Pref</option>
+            <option value="rule">Rule</option>
+          </select>
+        </div>
+        <button onClick={() => { addMemory(newMemory, memoryType, 'manual', memoryClient); setNewMemory(''); }}>Add Memory</button>
+        <div className="log" style={{ marginTop: '1rem', maxHeight: '300px' }}>
+          {filteredMemory.slice(0, 20).map(m => (
+            <div key={m.id} className="small" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0' }}>
+              <span>[{m.client || 'global'}|{m.type}] {m.content}</span>
+              <button className="secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }} onClick={() => deleteMemory(m.id)}>Del</button>
+            </div>
           ))}
         </div>
       </div>
