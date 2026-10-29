@@ -3,23 +3,24 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
-## Day 7 (28 Oct 2026) — Complete Finisher + Handoff Polish
-Completed the truncated page.js into a fully working local-first app. Strengthened the solopreneur context-switch killer.
+## Day 8 (29 Oct 2026) — Memory + Priority Polish
+Strengthened the local-first finisher for solopreneurs juggling multiple AI agents and clients.
 
-**Problem attacked:** Solopreneurs and freelancers lose hours to "AI brain fry" and attention residue when juggling multi-client work across different AI tools. Lightweight tools rarely give structured, client-scoped memory + one-click handoff prompts.
+**Problem attacked:** Attention residue and fragmented client context when switching between ChatGPT / Claude / Grok / Codex sessions. Most agent memory layers (mem0, Letta, OpenClaw) are either heavy, cloud-locked, or not scoped for multi-client freelance work. Lightweight portable handoff + recall is still underserved.
 
 **What shipped:**
-- Fully functional Next.js app (was truncated mid-function)
-- Client-scoped memory with keyword recall on task creation
-- Focus Mode (top 3 open tasks) + client filter
-- Improved one-click Handoff Prompt (structured markdown with completed/remaining, issues, client memory)
-- Export full state as JSON
-- Storage key bumped to v7
-- Cleaner UI polish, stats, activity log
+- Storage bumped to v8
+- Scored keyword recall (client boost + match count)
+- Memory types (fact/pref/rule), search, delete
+- Task priorities (high/normal/low) with visual badges and sort
+- Import JSON alongside export
+- Stats: open count + done-today
+- CSS fixes for step statuses + priority badges
+- Cleaner handoff prompt including priority
 
-Inspired by trending agent memory layers (claude-mem, mem0, hindsight), handoff patterns, and paperclip-style agent management — implemented as zero-dependency localStorage for instant deployability.
+Inspired by trending memory layers (mem0 extraction/scoping patterns, OpenMemory MCP local-first) and skills frameworks, kept zero-dependency for instant Vercel deploy.
 
-Previous days focused on the same core problem (persistent task completion + handoffs for attention bottleneck).
+Previous days: completed the truncated app and focused on the same core problem (persistent task completion + handoffs for attention bottleneck).
 
 ## How to run
 ```bash
