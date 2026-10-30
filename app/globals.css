@@ -15,6 +15,7 @@ h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #38bdf8; }
   padding: 1.25rem;
   margin-bottom: 1.5rem;
 }
+.brief { border-left: 3px solid #38bdf8; }
 input, textarea, button, select {
   font: inherit;
   padding: 0.6rem 0.8rem;
@@ -48,3 +49,7 @@ button.secondary:hover { background: #475569; }
 .prio-high { background: #7f1d1d; color: #fca5a5; }
 .prio-normal { background: #1e3a8a; color: #93c5fd; }
 .prio-low { background: #365314; color: #bef264; }
+.due { margin-left: 0.5rem; font-size: 0.75rem; color: #94a3b8; }
+.due-overdue { margin-left: 0.5rem; font-size: 0.75rem; color: #f87171; font-weight: 600; }
+.progress { height: 6px; background: #334155; border-radius: 3px; margin: 0.4rem 0; overflow: hidden; }
+.progress-bar { height: 100%; background: #38bdf8; transition: width 0.3s; }
