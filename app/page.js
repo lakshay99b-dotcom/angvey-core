@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v9';
-const LEGACY_KEY = 'angvey-finisher-v8';
+const STORAGE_KEY = 'angvey-finisher-v10';
+const LEGACY_KEYS = ['angvey-finisher-v9', 'angvey-finisher-v8'];
 
 export default function Home() {
   const [goal, setGoal] = useState('');
@@ -26,7 +26,12 @@ export default function Home() {
   useEffect(() => {
     try {
       let saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) saved = localStorage.getItem(LEGACY_KEY);
+      if (!saved) {
+        for (const k of LEGACY_KEYS) {
+          saved = localStorage.getItem(k);
+          if (saved) break;
+        }
+      }
       if (saved) {
         const data = JSON.parse(saved);
         setTasks(data.tasks || []);
@@ -56,7 +61,8 @@ export default function Home() {
       content: content.trim(),
       client: memClient.trim() || null,
       source,
-      ts: new Date().toISOString()
+      ts: new Date().toISOString(),
+      uses: 0
     };
     setMemory(prev => [entry, ...prev].slice(0, 200));
     addLog(`Memory (${type}${memClient ? '/' + memClient : ''}): ${content.slice(0, 50)}`);
@@ -69,19 +75,27 @@ export default function Home() {
 
   const recallRelevant = (goalText, taskClient) => {
     const keywords = goalText.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+    const now = Date.now();
     const score = (m) => {
       let s = 0;
       if (taskClient && m.client && m.client.toLowerCase() === taskClient.toLowerCase()) s += 5;
       keywords.forEach(k => { if (m.content.toLowerCase().includes(k)) s += 2; });
       if (!m.client) s += 1;
-      if (m.type === 'rule' || m.type === 'pref') s += 1;
+      if (m.type === 'rule' || m.type === 'pref') s += 2;
+      // Recency boost (last 7 days)
+      const ageDays = (now - new Date(m.ts).getTime()) / (1000 * 60 * 60 * 24);
+      if (ageDays < 7) s += 1;
+      if (m.uses) s += Math.min(m.uses, 3);
       return s;
     };
-    return memory
+    const relevant = memory
       .map(m => ({ ...m, score: score(m) }))
       .filter(m => m.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 8);
+    // Increment use counts
+    setMemory(prev => prev.map(m => relevant.find(r => r.id === m.id) ? { ...m, uses: (m.uses || 0) + 1 } : m));
+    return relevant;
   };
 
   const createTask = () => {
@@ -95,6 +109,11 @@ export default function Home() {
       'Prepare final output + handoff notes'
     ];
     const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+    // Auto-generate checks from rules/prefs
+    const checks = relevant
+      .filter(r => r.type === 'rule' || r.type === 'pref')
+      .slice(0, 5)
+      .map(r => ({ id: r.id, text: r.content, passed: false }));
     const newTask = {
       id: Date.now(),
       goal: goal.trim(),
@@ -108,6 +127,7 @@ export default function Home() {
         status: i === 0 ? 'running' : 'pending',
         ts: i === 0 ? new Date().toISOString() : null
       })),
+      checks,
       status: 'in_progress',
       notes: '',
       issues: [],
@@ -118,7 +138,7 @@ export default function Home() {
     setGoal('');
     setDueDate('');
     setTags('');
-    addLog(`Started: "${newTask.goal}"${client ? ` [${client}]` : ''} | prio ${priority}${dueDate ? ` | due ${dueDate}` : ''} | recalled ${relevant.length}`);
+    addLog(`Started: "${newTask.goal}"${client ? ` [${client}]` : ''} | prio ${priority}${dueDate ? ` | due ${dueDate}` : ''} | recalled ${relevant.length} | checks ${checks.length}`);
     setTimeout(() => advanceStep(newTask.id, 0), 600);
   };
 
@@ -136,6 +156,21 @@ export default function Home() {
     }));
   };
 
+  const toggleCheck = (taskId, checkId) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? {
+      ...t,
+      checks: (t.checks || []).map(c => c.id === checkId ? { ...c, passed: !c.passed } : c)
+    } : t));
+  };
+
+  const addCheck = (taskId, text) => {
+    if (!text.trim()) return;
+    setTasks(prev => prev.map(t => t.id === taskId ? {
+      ...t,
+      checks: [...(t.checks || []), { id: Date.now(), text: text.trim(), passed: false }]
+    } : t));
+  };
+
   const markIssue = (taskId, note) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, issues: [...(t.issues || []), note], status: 'blocked' } : t));
     addLog(`Issue on task ${taskId}: ${note}`);
@@ -151,6 +186,9 @@ export default function Home() {
     const progress = Math.round((task.steps.filter(s => s.status === 'done').length / task.steps.length) * 100);
     const dueStr = task.dueDate ? ` | Due: ${task.dueDate}${isOverdue(task) ? ' (OVERDUE)' : ''}` : '';
     const tagsStr = task.tags?.length ? ` | Tags: ${task.tags.join(', ')}` : '';
+    const checksStr = (task.checks || []).length
+      ? (task.checks.map(c => `- [${c.passed ? 'x' : ' '}] ${c.text}`).join('\n'))
+      : '- No specific checks (add rules in memory to auto-generate)';
 
     const prompt = `# HANDOFF — ${task.client || 'No Client'} | ${task.priority.toUpperCase()}${dueStr}${tagsStr}
 
@@ -167,6 +205,9 @@ ${remaining}
 
 **Recommended next atomic action:** ${nextAction}
 
+**Verification Checklist (must pass before considering done):**
+${checksStr}
+
 **Known issues / blockers:** ${task.issues?.length ? task.issues.join('; ') : 'None'}
 
 **Client constraints & facts (must respect):**
@@ -174,10 +215,10 @@ ${clientMem}
 ${globalMem ? `\n**Global prefs:**\n${globalMem}` : ''}
 
 **Instructions for receiving AI:**
-Continue from the recommended next action. Stay scoped to this client. Prefer small verifiable progress. Ask only if truly blocked. Produce ready-to-use output. Respect priority and any due date.
+Continue from the recommended next action. Stay scoped to this client. Prefer small verifiable progress. Run the verification checklist. Ask only if truly blocked. Produce ready-to-use output that passes every check. Respect priority and any due date.
 `.trim();
     navigator.clipboard.writeText(prompt).then(() => {
-      addLog(`Handoff copied for: ${task.goal.slice(0, 40)}`);
+      addLog(`Handoff (with checks) copied for: ${task.goal.slice(0, 40)}`);
       setHandoffTask(task.id);
       setTimeout(() => setHandoffTask(null), 2000);
     });
@@ -189,7 +230,7 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
   };
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify({ tasks, memory, log, exported: new Date().toISOString(), version: 'v9' }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ tasks, memory, log, exported: new Date().toISOString(), version: 'v10' }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `angvey-finisher-${new Date().toISOString().slice(0, 10)}.json`;
@@ -230,6 +271,7 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
   const openCount = tasks.filter(t => t.status !== 'done').length;
   const doneToday = tasks.filter(t => t.status === 'done' && new Date(t.createdAt).toDateString() === new Date().toDateString()).length;
   const overdueCount = tasks.filter(isOverdue).length;
+  const finishRate = tasks.length ? Math.round((tasks.filter(t => t.status === 'done').length / tasks.length) * 100) : 0;
 
   const filteredMemory = memory.filter(m =>
     !memorySearch || m.content.toLowerCase().includes(memorySearch.toLowerCase()) ||
@@ -244,7 +286,7 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
-      <p className="subtitle">Persistent task + memory agent for solopreneurs. Kill the AI context-switch tax. One-click structured handoffs across any AI.</p>
+      <p className="subtitle">Persistent task + memory agent for solopreneurs. Kill the AI context-switch tax and the draft rework tax. One-click structured handoffs with verification checklists.</p>
 
       {topOpen.length > 0 && (
         <div className="card brief">
@@ -256,6 +298,7 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
                 {isOverdue(t) && <span className="due-overdue"> OVERDUE</span>}
                 <strong style={{ marginLeft: '0.5rem' }}>{t.goal.slice(0, 60)}{t.goal.length > 60 ? '…' : ''}</strong>
                 {t.client && <span className="small"> · {t.client}</span>}
+                {(t.checks || []).length > 0 && <span className="small"> · {(t.checks || []).filter(c => c.passed).length}/{(t.checks || []).length} checks</span>}
               </div>
               <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => generateHandoff(t)}>
                 {handoffTask === t.id ? 'Copied!' : 'Handoff'}
@@ -287,14 +330,15 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
         <button className="secondary" onClick={exportData}>Export JSON</button>
         <button className="secondary" onClick={() => fileRef.current?.click()}>Import JSON</button>
         <input type="file" ref={fileRef} accept=".json" style={{ display: 'none' }} onChange={handleImport} />
-        <span className="small">{openCount} open · {doneToday} done today · {overdueCount} overdue · {memory.length} memories · {uniqueClients.length} clients</span>
+        <span className="small">{openCount} open · {doneToday} done today · {overdueCount} overdue · {finishRate}% finish rate · {memory.length} memories · {uniqueClients.length} clients</span>
       </div>
 
-      {sortedFocus.length === 0 && <div className="card small">No tasks yet. Start a goal above — memory is recalled automatically and scoped to client.</div>}
+      {sortedFocus.length === 0 && <div className="card small">No tasks yet. Start a goal above — memory is recalled automatically and scoped to client. Rules become verification checks.</div>}
 
       {sortedFocus.map(task => {
         const doneSteps = task.steps.filter(s => s.status === 'done').length;
         const pct = Math.round((doneSteps / task.steps.length) * 100);
+        const checksPassed = (task.checks || []).filter(c => c.passed).length;
         return (
           <div key={task.id} className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -305,7 +349,7 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
                 {task.client && <div className="small">Client: {task.client}</div>}
                 {task.tags?.length > 0 && <div className="small">Tags: {task.tags.join(', ')}</div>}
                 <div className="progress"><div className="progress-bar" style={{ width: `${pct}%` }} /></div>
-                <span className="small">{pct}% · {task.status}</span>
+                <span className="small">{pct}% · {task.status} · checks {checksPassed}/{(task.checks || []).length}</span>
               </div>
               <button className="secondary" onClick={() => generateHandoff(task)}>
                 {handoffTask === task.id ? 'Copied!' : 'Copy Handoff'}
@@ -318,9 +362,20 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
                 </div>
               ))}
             </div>
+            {(task.checks || []).length > 0 && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <div className="small" style={{ marginBottom: '0.25rem' }}>Verification Checks (from rules):</div>
+                {(task.checks || []).map(c => (
+                  <div key={c.id} className="step" style={{ cursor: 'pointer' }} onClick={() => toggleCheck(task.id, c.id)}>
+                    {c.passed ? '✓' : '○'} {c.text}
+                  </div>
+                ))}
+              </div>
+            )}
             {task.issues?.length > 0 && <div className="step issue">Issues: {task.issues.join('; ')}</div>}
             <div style={{ marginTop: '0.5rem' }}>
               <button className="secondary" style={{ marginRight: '0.5rem' }} onClick={() => advanceStep(task.id, task.steps.findIndex(s => s.status === 'running'))}>Advance</button>
+              <button className="secondary" style={{ marginRight: '0.5rem' }} onClick={() => { const t = prompt('Add verification check:'); if (t) addCheck(task.id, t); }}>Add Check</button>
               <button className="secondary" onClick={() => markIssue(task.id, prompt('Issue note:') || 'blocked')}>Mark Issue</button>
             </div>
           </div>
@@ -343,7 +398,7 @@ Continue from the recommended next action. Stay scoped to this client. Prefer sm
         <div className="log" style={{ marginTop: '1rem', maxHeight: '300px' }}>
           {filteredMemory.slice(0, 20).map(m => (
             <div key={m.id} className="small" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0' }}>
-              <span>[{m.client || 'global'}|{m.type}] {m.content}</span>
+              <span>[{m.client || 'global'}|{m.type}] {m.content} {m.uses ? `(used ${m.uses})` : ''}</span>
               <button className="secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }} onClick={() => deleteMemory(m.id)}>Del</button>
             </div>
           ))}
