@@ -3,6 +3,22 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
+## Day 14 (4 Nov 2026) — Next-Action Finish Prompts: Kill the "What Next" Tax
+
+Attacked the residual friction after resume packets: freelancers still spend minutes crafting the precise prompt for the single current atomic step, and agents frequently expand scope or skip verification instead of producing one small verifiable output.
+
+**Problem attacked:** Even with live work state and skills, the "what exactly do I do next and how to force a tiny finished increment" tax remains. Inspired by trending persistent context (claude-mem), agent skills frameworks, and documented agent failure modes (unbounded execution without meaningful progress). Few tools deliver a one-paste hyper-focused prompt that constrains the agent to the current next action only.
+
+**What shipped:**
+- Storage bumped to v14 (auto-loads v13–v8)
+- New Next-Action Finish Prompts: one-click generate ultra-focused markdown for the current running/pending step, including relevant rules and pending checks
+- Buttons on Daily Brief and every task card — copies to clipboard for paste into any agent
+- Instructions force smallest verifiable output + one-line VERIFICATION note, then stop
+- Subtitle, empty states, and export version updated
+- Still zero-dependency, instant Vercel deploy
+
+Builds on Day 13 Client Resume Packets. Previous: Portable Skill Cards, Reflect & Retain, verification checklists, due dates, structured handoffs, daily brief, memory types, priorities, import/export, focus mode.
+
 ## Day 13 (3 Nov 2026) — Client Resume Packets: Kill the Last Switch Residue
 
 Attacked the residual client-switch tax that pure Skill Cards leave behind: freelancers still spend 5–15 minutes reconstructing *where they left off* (open tasks, next actions, pending checks) when jumping between 5–10 clients across AI tools.
@@ -80,4 +96,4 @@ npm run dev
 Deploy on Vercel: connect this repo (zero config). Suggested project name: angvey-finisher or angvey-core.
 
 ## Vision
-Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds or draft rework. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards and live Resume Packets make the memory and work state usable across any agent.
+Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds or draft rework. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards, live Resume Packets, and Next-Action Finish Prompts make the memory and work state usable across any agent.
