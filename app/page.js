@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v13';
-const LEGACY_KEYS = ['angvey-finisher-v12', 'angvey-finisher-v11', 'angvey-finisher-v10', 'angvey-finisher-v9', 'angvey-finisher-v8'];
+const STORAGE_KEY = 'angvey-finisher-v14';
+const LEGACY_KEYS = ['angvey-finisher-v13', 'angvey-finisher-v12', 'angvey-finisher-v11', 'angvey-finisher-v10', 'angvey-finisher-v9', 'angvey-finisher-v8'];
 
 export default function Home() {
   const [goal, setGoal] = useState('');
@@ -23,6 +23,7 @@ export default function Home() {
   const [memorySearch, setMemorySearch] = useState('');
   const [skillCopied, setSkillCopied] = useState(null);
   const [resumeCopied, setResumeCopied] = useState(null);
+  const [nextActionCopied, setNextActionCopied] = useState(null);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -134,6 +135,19 @@ export default function Home() {
       setResumeCopied(clientName || 'global');
       addLog(`Generated & copied Resume Packet for ${clientName || 'global'}`);
       setTimeout(() => setResumeCopied(null), 2000);
+    });
+  };
+
+  const generateNextAction = (task) => {
+    const nextStep = task.steps.find(s => s.status === 'running' || s.status === 'pending')?.text || 'Finalize and deliver';
+    const relevant = recallRelevant(task.goal, task.client);
+    const rules = relevant.filter(r => r.type === 'rule' || r.type === 'pref').slice(0, 4).map(r => `- ${r.content}`).join('\n') || '- None specific';
+    const pendingChecks = (task.checks || []).filter(c => !c.passed).slice(0, 3).map(c => c.text).join('; ') || 'None pending';
+    const promptText = `# NEXT ATOMIC ACTION — ${task.client || 'No Client'} | ${task.priority.toUpperCase()}\nGoal: ${task.goal}\n\n**Do ONLY this next action:** ${nextStep}\n\n**Must respect:**\n${rules}\n\n**Pending checks to satisfy:** ${pendingChecks}\n\n**Instructions:** Produce the smallest possible verifiable output for this single action only. Do not expand scope. After the output, add one line: VERIFICATION: [how this satisfies the checks / rules]. Then stop.`;
+    navigator.clipboard.writeText(promptText).then(() => {
+      setNextActionCopied(task.id);
+      addLog(`Generated & copied Next-Action Prompt for: ${task.goal.slice(0, 40)}`);
+      setTimeout(() => setNextActionCopied(null), 2000);
     });
   };
 
@@ -256,7 +270,7 @@ export default function Home() {
   };
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify({ tasks, memory, log, exported: new Date().toISOString(), version: 'v13' }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ tasks, memory, log, exported: new Date().toISOString(), version: 'v14' }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `angvey-finisher-${new Date().toISOString().slice(0, 10)}.json`;
@@ -312,7 +326,7 @@ export default function Home() {
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
-      <p className="subtitle">Persistent task + memory agent for solopreneurs. Kill the AI context-switch tax, draft rework tax, and session amnesia. One-click handoffs + Reflect + portable Skill Cards + Client Resume Packets for any agent.</p>
+      <p className="subtitle">Persistent task + memory agent for solopreneurs. Kill the AI context-switch tax, draft rework tax, and session amnesia. One-click handoffs + Reflect + portable Skill Cards + Client Resume Packets + Next-Action Finish Prompts for any agent.</p>
 
       {topOpen.length > 0 && (
         <div className="card brief">
@@ -326,9 +340,14 @@ export default function Home() {
                 {t.client && <span className="small"> · {t.client}</span>}
                 {(t.checks || []).length > 0 && <span className="small"> · {(t.checks || []).filter(c => c.passed).length}/{(t.checks || []).length} checks</span>}
               </div>
-              <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => generateHandoff(t)}>
-                {handoffTask === t.id ? 'Copied!' : 'Handoff'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => generateNextAction(t)}>
+                  {nextActionCopied === t.id ? 'Copied!' : 'Next Action'}
+                </button>
+                <button className="secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => generateHandoff(t)}>
+                  {handoffTask === t.id ? 'Copied!' : 'Handoff'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -359,7 +378,7 @@ export default function Home() {
         <span className="small">{openCount} open · {doneToday} done today · {overdueCount} overdue · {finishRate}% finish rate · {memory.length} memories · {uniqueClients.length} clients</span>
       </div>
 
-      {sortedFocus.length === 0 && <div className="card small">No tasks yet. Start a goal above — memory is recalled automatically and scoped to client. Rules become verification checks. Generate Skill Cards and Resume Packets for any agent.</div>}
+      {sortedFocus.length === 0 && <div className="card small">No tasks yet. Start a goal above — memory is recalled automatically and scoped to client. Rules become verification checks. Generate Skill Cards, Resume Packets, and Next-Action Prompts for any agent.</div>}
 
       {sortedFocus.map(task => {
         const doneSteps = task.steps.filter(s => s.status === 'done').length;
@@ -377,9 +396,14 @@ export default function Home() {
                 <div className="progress"><div className="progress-bar" style={{ width: `${pct}%` }} /></div>
                 <span className="small">{pct}% · {task.status} · checks {checksPassed}/{(task.checks || []).length}</span>
               </div>
-              <button className="secondary" onClick={() => generateHandoff(task)}>
-                {handoffTask === task.id ? 'Copied!' : 'Copy Handoff'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                <button className="secondary" onClick={() => generateNextAction(task)}>
+                  {nextActionCopied === task.id ? 'Copied!' : 'Next Action'}
+                </button>
+                <button className="secondary" onClick={() => generateHandoff(task)}>
+                  {handoffTask === task.id ? 'Copied!' : 'Copy Handoff'}
+                </button>
+              </div>
             </div>
             <div style={{ marginTop: '0.75rem' }}>
               {task.steps.map(s => (
@@ -419,13 +443,13 @@ export default function Home() {
               {skillCopied === c ? 'Copied!' : `${c} Skill`}
             </button>
           ))}
-          {uniqueClients.length === 0 && <span className="small">No clients yet — create a task with a client name.</span>}
+          {uniqueClients.length === 0 && <span className="small">No clients yet. Add tasks with clients to generate scoped skills.</span>}
         </div>
       </div>
 
       <div className="card">
         <h3 style={{ marginBottom: '0.75rem' }}>Client Resume Packets</h3>
-        <p className="small" style={{ marginBottom: '0.75rem' }}>One-click live resume packet: Skill rules + recent outcomes + top open tasks with next actions & pending checks. Paste into any agent to kill the last 5–10 min of client-switch residue. Builds on Skill Cards.</p>
+        <p className="small" style={{ marginBottom: '0.75rem' }}>One-paste live resume of the client's current open work: rules + recent outcomes + top open tasks with next actions & pending checks. Paste into any agent to kill the last 5–10 min of client-switch residue. Builds on Skill Cards.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
           <button className="secondary" onClick={() => generateResumePacket('')}>Global Resume</button>
           {uniqueClients.map(c => (
