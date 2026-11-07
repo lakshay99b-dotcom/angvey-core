@@ -3,6 +3,22 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
+## Day 17 (7 Nov 2026) — Day-Start Finish Packets: Kill the Morning Prioritization + Reload Tax
+
+Attacked the residual morning tax: freelancers still spend 10–20 minutes deciding which unfinished client work to attack first and assembling the right context, even after Skill Cards, Resume Packets, Next-Action Prompts, Evidence, and Receipts.
+
+**Problem attacked:** Attention residue + decision fatigue compounds the unfinished-work pile. Inspired by trending persistent context (claude-mem), agent skills, and computer-use tooling (vercel-labs/agent-desktop). Few lightweight tools deliver a single pasteable “start the highest-leverage increment now” packet that opens with a constrained next-action prompt.
+
+**What shipped:**
+- Storage bumped to v17 (auto-loads v16–v8)
+- Completed previously truncated page into a fully working zero-dependency app (all prior features restored)
+- New Day-Start Finish Packets: one-click generates compact markdown that opens with the full Next-Action prompt for the #1 open task (priority + overdue), then short resumes of #2/#3 + relevant rules
+- Button in Daily Brief — copies to clipboard for any agent
+- Subtitle, empty states, and export version updated
+- Still zero-dependency, instant Vercel deploy
+
+Builds on Day 16 Client-Ready Finish Receipts. Previous: Finish Evidence Packets, Next-Action Finish Prompts, Client Resume Packets, Portable Skill Cards, Reflect & Retain, verification checklists, due dates, structured handoffs, daily brief, memory types, priorities, import/export, focus mode.
+
 ## Day 16 (6 Nov 2026) — Client-Ready Finish Receipts: Kill the Status Update Tax
 
 Attacked the residual rewrite tax after evidence logging: freelancers still manually convert verified agent artifacts into professional, client-safe progress updates for email, Slack, or portals.
@@ -128,4 +144,4 @@ npm run dev
 Deploy on Vercel: connect this repo (zero config). Suggested project name: angvey-finisher or angvey-core.
 
 ## Vision
-Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds or draft rework. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards, live Resume Packets, Next-Action Finish Prompts, Finish Evidence Packets, and Client-Ready Finish Receipts make the memory and work state usable across any agent.
+Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds or draft rework. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards, live Resume Packets, Next-Action Finish Prompts, Finish Evidence Packets, Client-Ready Finish Receipts, and Day-Start Finish Packets make the memory and work state usable across any agent.
