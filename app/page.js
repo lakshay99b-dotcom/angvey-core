@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v20';
+const STORAGE_KEY = 'angvey-finisher-v21';
 const LEGACY_KEYS = [
-  'angvey-finisher-v19', 'angvey-finisher-v18', 'angvey-finisher-v17',
-  'angvey-finisher-v16', 'angvey-finisher-v15', 'angvey-finisher-v14',
-  'angvey-finisher-v13', 'angvey-finisher-v12', 'angvey-finisher-v11',
-  'angvey-finisher-v10', 'angvey-finisher-v9', 'angvey-finisher-v8'
+  'angvey-finisher-v20', 'angvey-finisher-v19', 'angvey-finisher-v18',
+  'angvey-finisher-v17', 'angvey-finisher-v16', 'angvey-finisher-v15',
+  'angvey-finisher-v14', 'angvey-finisher-v13', 'angvey-finisher-v12',
+  'angvey-finisher-v11', 'angvey-finisher-v10', 'angvey-finisher-v9', 'angvey-finisher-v8'
 ];
 
 export default function Home() {
@@ -45,7 +45,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, log, memory, version: 'v20' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, log, memory, version: 'v21' }));
   }, [tasks, log, memory]);
 
   const addLog = (msg) => setLog(prev => [{ t: new Date().toISOString(), msg }, ...prev].slice(0, 50));
@@ -101,12 +101,12 @@ export default function Home() {
   };
 
   const exportData = () => {
-    const data = { tasks, log, memory, version: 'v20', exported: new Date().toISOString() };
+    const data = { tasks, log, memory, version: 'v21', exported: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `angvey-finisher-v20-${Date.now()}.json`;
+    a.download = `angvey-finisher-v21-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     addLog('Exported data');
@@ -157,7 +157,7 @@ export default function Home() {
   const generateNextAction = (task) => {
     const next = task.steps.find(s => s.status !== 'done') || { text: 'Finish remaining work' };
     const rules = relevantMemory(task.client).filter(m => m.type === 'rule').slice(0, 3);
-    return `# Next-Action Finish Prompt\n\nDo ONLY this single atomic step for "${task.goal}" (${task.client || 'no client'}):\n\n**Action:** ${next.text}\n\nRules to obey:\n${rules.map(r => `- ${r.text}`).join('\n') || '- None'}\n\nProduce the smallest verifiable artifact. Then output exactly:\nARTIFACT: <one-line description of what you produced>\nVERIFICATION: <how to check it>\nThen STOP. Do not expand scope.`;
+    return `# Next-Action Finish Prompt\n\nDo ONLY this single atomic step for \"${task.goal}\" (${task.client || 'no client'}):\n\n**Action:** ${next.text}\n\nRules to obey:\n${rules.map(r => `- ${r.text}`).join('\n') || '- None'}\n\nProduce the smallest verifiable artifact. Then output exactly:\nARTIFACT: <one-line description of what you produced>\nVERIFICATION: <how to check it>\nThen STOP. Do not expand scope.`;
   };
 
   const generateEvidencePacket = (task) => generateNextAction(task) + '\n\nAfter you finish, paste the ARTIFACT/VERIFICATION block back here to log evidence.';
@@ -220,6 +220,23 @@ export default function Home() {
     return md;
   };
 
+  const generateComplianceAudit = (clientName = '') => {
+    const rules = relevantMemory(clientName).filter(m => m.type === 'rule');
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recentOutcomes = memory.filter(m =>
+      m.type === 'outcome' &&
+      new Date(m.created).getTime() > weekAgo &&
+      (!clientName || !m.client || m.client === clientName)
+    ).slice(0, 12);
+
+    if (!rules.length && !recentOutcomes.length) {
+      return '# Compliance Audit Packet\n\nNo rules or recent outcomes to audit. Add rules and log outcomes first.';
+    }
+
+    let md = `# Compliance Audit Packet — ${clientName || 'General'}\n\nGenerated ${new Date().toLocaleDateString()}. Use before any client delivery or invoice to kill silent rule drift.\n\n## Rules to enforce\n${rules.map(r => `- ${r.text}`).join('\n') || '- None defined'}\n\n## Recent outcomes / evidence (last 7 days)\n${recentOutcomes.map(o => `- [${o.client || 'General'}] ${o.text}`).join('\n') || '- None'}\n\n## Audit instructions\n1. Cross-check every listed outcome against the rules above.\n2. Flag any violations or soft deviations with severity (high/med/low) and a concrete suggested fix.\n3. If fully compliant, produce a short client-safe confirmation summary.\n4. Output only the audit results. Do not invent new work or expand scope.\n\nPaste into any agent. Act on the result before shipping to the client.`;
+    return md;
+  };
+
   const finishRate = tasks.length ? Math.round((tasks.filter(t => t.status === 'done').length / tasks.length) * 100) : 0;
   const topOpen = tasks.filter(t => t.status !== 'done')
     .sort((a, b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0))
@@ -231,8 +248,8 @@ export default function Home() {
     <div className="container">
       <h1>ANGVEY Finisher</h1>
       <p className="subtitle">
-        Persistent task + memory agent for solopreneurs. Kill context-switch, rework, amnesia, morning, close-out, interruption, and now weekly invoice reconstruction taxes.
-        One-click Skill Cards, Resume Packets, Next-Action Prompts, Evidence, Receipts, Day-Start/Close/Mid-Day, and Weekly Invoice Narratives for any agent.
+        Persistent task + memory agent for solopreneurs. Kill context-switch, rework, amnesia, morning, close-out, interruption, weekly invoice, and now rule-compliance audit taxes.
+        One-click Skill Cards, Resume Packets, Next-Action Prompts, Evidence, Receipts, Day-Start/Close/Mid-Day, Weekly Invoice Narratives, and Compliance Audits for any agent.
       </p>
 
       <div className="card brief">
@@ -253,6 +270,7 @@ export default function Home() {
               <button onClick={() => copy(generateDayClose(), 'dayclose')}>{copied === 'dayclose' ? 'Copied!' : 'Day-Close Packet'}</button>
               <button onClick={() => copy(generateMidDay(), 'midday')}>{copied === 'midday' ? 'Copied!' : 'Mid-Day Resume'}</button>
               <button onClick={() => copy(generateWeeklyInvoice(), 'invoice')}>{copied === 'invoice' ? 'Copied!' : 'Weekly Invoice Narrative'}</button>
+              <button onClick={() => copy(generateComplianceAudit(clientFilter), 'audit')}>{copied === 'audit' ? 'Copied!' : 'Compliance Audit'}</button>
             </div>
             {topOpen.map(t => (
               <div key={t.id} style={{ marginBottom: '0.5rem' }}>
@@ -285,9 +303,10 @@ export default function Home() {
 
       <div className="card">
         <h3>Portable Client Skill Cards</h3>
-        <p className="small">Generate compact SKILL.md-style context. Paste into any agent.</p>
+        <p className="small">Generate compact SKILL.md-style context. Paste into any agent. Filter also scopes the Compliance Audit.</p>
         <input placeholder="Client name (blank = general)" value={clientFilter} onChange={e => setClientFilter(e.target.value)} />
         <button onClick={() => copy(generateSkillCard(clientFilter), 'skill')}>{copied === 'skill' ? 'Copied!' : 'Generate Skill Card'}</button>
+        <button onClick={() => copy(generateComplianceAudit(clientFilter), 'audit-skill')}>{copied === 'audit-skill' ? 'Copied!' : 'Generate Compliance Audit'}</button>
       </div>
 
       <div className="card">
