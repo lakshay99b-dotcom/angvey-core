@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v27';
+const STORAGE_KEY = 'angvey-finisher-v28';
 const LEGACY_KEYS = [
-  'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
+  'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
   'angvey-finisher-v22', 'angvey-finisher-v21', 'angvey-finisher-v20', 'angvey-finisher-v19',
   'angvey-finisher-v18', 'angvey-finisher-v17', 'angvey-finisher-v16', 'angvey-finisher-v15',
   'angvey-finisher-v14', 'angvey-finisher-v13', 'angvey-finisher-v12', 'angvey-finisher-v11',
   'angvey-finisher-v10', 'angvey-finisher-v9', 'angvey-finisher-v8'
 ];
+
+const IRREVERSIBLE_KEYWORDS = /\b(send|email|mail|pay|payment|delete|remove|publish|post|book|reserve|submit|update|change|modify|cancel|unsubscribe|charge|transfer|deploy|merge|drop|wipe|purchase|buy|order|confirm|approve)\b/i;
 
 export default function Home() {
   const [tasks, setTasks] = useState([]);
@@ -46,7 +48,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v27' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v28' }));
   }, [tasks, memory, log]);
 
   const addLog = (msg) => setLog(prev => [{ t: new Date().toISOString(), msg }, ...prev].slice(0, 50));
@@ -134,8 +136,16 @@ export default function Home() {
     const locks = memory.filter(m => m.type === 'rule' || m.type === 'pref');
     const recentEvidence = memory.filter(m => m.type === 'outcome').slice(0, 6);
     const topTask = tasks.filter(t => t.status !== 'done')[0];
-    const packet = `# Preference Drift Check Packet\nGenerated: ${new Date().toLocaleString()}\nVersion: v27\n\n## Active Locked Preferences & Rules\n${locks.map((l, i) => `${i + 1}. ${l.content} (since ${new Date(l.created).toLocaleDateString()})`).join('\n') || '- None locked'}\n\n## Recent Evidence / Outcomes\n${recentEvidence.map(e => `- ${e.content}`).join('\n') || '- None'}\n\n## Current Focus\n${topTask ? `${topTask.goal} → next atomic: ${topTask.nextAction || 'not set'}` : 'No open task'}\n\n## Strict Instructions for Any Agent\n1. Restate each locked preference in your own words and confirm you will honor it strictly.\n2. Scan the current next action and recent evidence for any risk of drift, softening, or re-interpretation.\n3. List only true conflicts (or "none") with a recommended default that preserves the lock.\n4. If no conflicts, auto-proceed and append a one-line adherence log: "Locks honored: [list of ids or short names]".\n5. Do not ask clarifying questions on locked items. Prefer finishing over new starts.\n\nThis packet forces re-grounding to kill preference drift tax.`;
+    const packet = `# Preference Drift Check Packet\nGenerated: ${new Date().toLocaleString()}\nVersion: v28\n\n## Active Locked Preferences & Rules\n${locks.map((l, i) => `${i + 1}. ${l.content} (since ${new Date(l.created).toLocaleDateString()})`).join('\n') || '- None locked'}\n\n## Recent Evidence / Outcomes\n${recentEvidence.map(e => `- ${e.content}`).join('\n') || '- None'}\n\n## Current Focus\n${topTask ? `${topTask.goal} → next atomic: ${topTask.nextAction || 'not set'}` : 'No open task'}\n\n## Strict Instructions for Any Agent\n1. Restate each locked preference in your own words and confirm you will honor it strictly.\n2. Scan the current next action and recent evidence for any risk of drift, softening, or re-interpretation.\n3. List only true conflicts (or "none") with a recommended default that preserves the lock.\n4. If no conflicts, auto-proceed and append a one-line adherence log: "Locks honored: [list of ids or short names]".\n5. Do not ask clarifying questions on locked items. Prefer finishing over new starts.\n\nThis packet forces re-grounding to kill preference drift tax.`;
     copyPacket('Preference Drift Check', packet);
+  };
+
+  const generateActionApproval = () => {
+    const open = tasks.filter(t => t.status !== 'done').slice(0, 8);
+    const flagged = open.filter(t => IRREVERSIBLE_KEYWORDS.test(t.nextAction || '') || IRREVERSIBLE_KEYWORDS.test(t.goal || ''));
+    const reversible = open.filter(t => !flagged.includes(t));
+    const packet = `# Action Approval & Side-Effect Packet\nGenerated: ${new Date().toLocaleString()}\nVersion: v28\n\n## Open Next Actions\n${open.map(t => `- [${t.priority}] ${t.goal} → ${t.nextAction || 'define next'}${IRREVERSIBLE_KEYWORDS.test(t.nextAction || t.goal) ? ' ⚠️ potentially irreversible' : ''}`).join('\n') || '- None'}\n\n## Flagged for Explicit Approval (irreversible keywords detected)\n${flagged.map(t => `- APPROVAL NEEDED: ${t.goal} → ${t.nextAction || t.goal}`).join('\n') || '- None flagged — all appear reversible'}\n\n## Reversible (auto-proceed ok)\n${reversible.map(t => `- ${t.goal} → ${t.nextAction || 'define'}`).join('\n') || '- None'}\n\n## Strict Instructions for Any Agent (incl. local agents like Nod)\n1. Declare the exact planned actions and expected side-effects for the top open task.\n2. For every flagged irreversible item: STOP and output a compact approval request. Do not act until human replies "approved: [item]" or equivalent.\n3. On reversible items only: auto-proceed if they match locked rules/prefs.\n4. After any action, append a verification log line: "Executed: [action] — evidence: [link/screenshot/confirmation] — reversible: yes/no".\n5. Never redo irreversible side-effects. Prefer finishing over new starts. Respect all locks.\n\nThis packet kills irreversible action uncertainty by forcing declaration + selective approval + evidence.`;
+    copyPacket('Action Approval', packet);
   };
 
   const generateDayStart = () => {
@@ -149,12 +159,12 @@ export default function Home() {
   const clients = [...new Set(tasks.map(t => t.client).filter(Boolean))];
 
   const exportData = () => {
-    const data = { tasks, log, memory, version: 'v27', exported: new Date().toISOString() };
+    const data = { tasks, log, memory, version: 'v28', exported: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `angvey-finisher-v27-${Date.now()}.json`;
+    a.download = `angvey-finisher-v28-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     addLog('Exported data');
@@ -180,7 +190,7 @@ export default function Home() {
     <div className="container">
       <h1>ANGVEY Finisher</h1>
       <p className="subtitle">
-        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, and preference-drift taxes.
+        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, and irreversible-action uncertainty taxes.
         One-click packets for any agent.
       </p>
       <p>Finish rate: {finishRate}% · Open: {topOpen.length} · Memory: {memory.length} · 
@@ -196,6 +206,7 @@ export default function Home() {
           <button onClick={generateJudgmentDrain} style={{ marginLeft: '0.5rem' }}>{copied === 'Judgment Drain' ? 'Copied!' : 'Judgment Drain'}</button>
           <button onClick={generateRestartResume} style={{ marginLeft: '0.5rem' }}>{copied === 'Restart Resume' ? 'Copied!' : 'Restart Resume'}</button>
           <button onClick={generatePreferenceDrift} style={{ marginLeft: '0.5rem' }}>{copied === 'Preference Drift Check' ? 'Copied!' : 'Preference Drift Check'}</button>
+          <button onClick={generateActionApproval} style={{ marginLeft: '0.5rem' }}>{copied === 'Action Approval' ? 'Copied!' : 'Action Approval'}</button>
           <ul style={{ marginTop: '1rem' }}>
             {topOpen.slice(0, 3).map(t => (
               <li key={t.id}>[{t.priority}] {t.goal} → {t.nextAction || 'set next action'}</li>
