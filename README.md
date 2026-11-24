@@ -3,20 +3,20 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
-## Day 30 (23 Nov 2026) — Session Continuity & Multi-Thread Handoff Packets: Kill the Fried-Brain Multi-Session Tax
+## Day 31 (24 Nov 2026) — Cognitive Load & Brain-Fry Prevention Packets: Kill the Oversight Exhaustion Tax
 
-Attacked the multi-session / parallel-thread context fragmentation tax: solopreneurs juggling multiple agent threads (different clients, tools, devices, or sessions) suffer attention residue + session amnesia because there is no lightweight, agent-agnostic packet that forces a clean select-one-resume + park-the-rest protocol. Existing single-thread packets help, but none address the parallel-thread "fried brain" problem documented in agent-usage research. Inspired by Agent Host Protocol (cross-client continuity), agent-handoff-memory patterns, to-the-next-session style state + relay, and Superpowers-style mandatory process steps.
+Attacked the cognitive-load / brain-fry oversight tax: solopreneurs supervising parallel AI agents (different clients, tools, devices) accumulate unfinished threads that fry attention. BCG research and attention-residue studies show constant micro-reviews and open mental threads exceed human cognitive capacity, causing errors, decision fatigue, and quit intent. Existing packets help single-thread or multi-thread handoff, but none force a portable zero-oversight window with load scoring and attention-minutes-saved report. Inspired by Superpowers mandatory process + verification-before-completion, mem0-style persistent memory patterns, continuity/handoff skills, and multi-agent fleet research.
 
-**Problem attacked:** Multi-thread / multi-session continuity tax and the resulting fried-brain effect from parallel agent work. One-click packet produces a Boot View of top open threads with exact resume points, then instructs any agent to select exactly one thread to fully resume or hand off, park every other thread with a self-contained note, and clear zero mental threads.
+**Problem attacked:** Cognitive Load & Brain-Fry Oversight Tax. One-click packet scores open threads by residue/age/irreversibility/missing-next, recommends the single highest-leverage finishable focus, parks the rest with self-contained notes, and emits a Cognitive Budget Report so the human can take a 45-90 min deep-work window with zero agent pings.
 
 **What shipped:**
-- Storage bumped to v30 (auto-loads v29–v8)
-- New Session Continuity & Multi-Thread Handoff Packets: one-click generates markdown with scored Boot View, locks, and strict protocol to resume one / park the rest with zero residue
-- Button in Daily Brief next to Attention Residue
+- Storage bumped to v31 (auto-loads v30–v8)
+- New Cognitive Load & Brain-Fry Prevention Packets: one-click generates markdown with load-scored Boot View, recommended focus, park list, locks, and strict zero-oversight protocol + budget report
+- Button in Daily Brief next to Session Continuity
 - Subtitle, export version, packet versions, and vision updated
 - Still zero-dependency, instant Vercel deploy
 
-Builds on Day 29 Attention Residue & Clean Handoff Packets. Previous: Action Approval & Side-Effect, Preference Drift Check, Restart Resume, Judgment Drain, Grill-Before-Act, Compliance Audit Packets, Weekly Invoice Narratives, Mid-Day Resume, Day-Close/Start, Client-Ready Receipts, Finish Evidence, Next-Action Prompts, Client Resume, Portable Skill Cards.
+Builds on Day 30 Session Continuity & Multi-Thread Handoff Packets. Previous: Attention Residue & Clean Handoff, Action Approval & Side-Effect, Preference Drift Check, Restart Resume, Judgment Drain, Grill-Before-Act, Compliance Audit Packets, Weekly Invoice Narratives, Mid-Day Resume, Day-Close/Start, Client-Ready Receipts, Finish Evidence, Next-Action Prompts, Client Resume, Portable Skill Cards.
 
 ## How to run
 ```bash
@@ -26,4 +26,4 @@ npm run dev
 Deploy on Vercel: connect this repo (zero config). Suggested project name: angvey-finisher or angvey-core.
 
 ## Vision
-Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds or draft rework. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards, live Resume Packets, Next-Action Finish Prompts, Finish Evidence Packets, Client-Ready Finish Receipts, Day-Start Finish Packets, Day-Close Finish Packets, Mid-Day Resume Packets, Weekly Invoice Narrative Packets, Compliance Audit Packets, Grill-Before-Act Packets, Judgment Drain Packets, Session Outcome Capture Packets, Skill Lock Packets, Restart Resume Packets, Preference Drift Check Packets, Action Approval & Side-Effect Packets, Attention Residue & Clean Handoff Packets, and Session Continuity & Multi-Thread Handoff Packets make the memory and work state usable across any agent.
+Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds or draft rework. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards, live Resume Packets, Next-Action Finish Prompts, Finish Evidence Packets, Client-Ready Finish Receipts, Day-Start Finish Packets, Day-Close Finish Packets, Mid-Day Resume Packets, Weekly Invoice Narrative Packets, Compliance Audit Packets, Grill-Before-Act Packets, Judgment Drain Packets, Session Outcome Capture Packets, Skill Lock Packets, Restart Resume Packets, Preference Drift Check Packets, Action Approval & Side-Effect Packets, Attention Residue & Clean Handoff Packets, Session Continuity & Multi-Thread Handoff Packets, and Cognitive Load & Brain-Fry Prevention Packets make the memory and work state usable across any agent.
