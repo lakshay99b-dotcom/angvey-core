@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v32';
+const STORAGE_KEY = 'angvey-finisher-v33';
 const LEGACY_KEYS = [
-  'angvey-finisher-v31', 'angvey-finisher-v30', 'angvey-finisher-v29', 'angvey-finisher-v28', 'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
+  'angvey-finisher-v32', 'angvey-finisher-v31', 'angvey-finisher-v30', 'angvey-finisher-v29', 'angvey-finisher-v28', 'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
   'angvey-finisher-v22', 'angvey-finisher-v21', 'angvey-finisher-v20', 'angvey-finisher-v19',
   'angvey-finisher-v18', 'angvey-finisher-v17', 'angvey-finisher-v16', 'angvey-finisher-v15',
   'angvey-finisher-v14', 'angvey-finisher-v13', 'angvey-finisher-v12', 'angvey-finisher-v11',
@@ -48,7 +48,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v32' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v33' }));
   }, [tasks, memory, log]);
 
   const addLog = (msg) => setLog(prev => [{ t: new Date().toISOString(), msg }, ...prev].slice(0, 50));
@@ -108,12 +108,12 @@ export default function Home() {
   const clients = [...new Set(tasks.map(t => t.client).filter(Boolean))];
 
   const exportData = () => {
-    const data = { tasks, log, memory, version: 'v32', exported: new Date().toISOString() };
+    const data = { tasks, log, memory, version: 'v33', exported: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `angvey-finisher-v32-${Date.now()}.json`;
+    a.download = `angvey-finisher-v33-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     addLog('Exported data');
@@ -177,12 +177,57 @@ export default function Home() {
     copyPacket('Verification Burden', text);
   };
 
+  // Day 33: Methodology Lock / Portable SKILL.md Packet
+  const generateMethodologyLock = () => {
+    const locks = memory.filter(m => m.type === 'lock' || m.type === 'preference').slice(-6);
+    const focus = topOpen[0] || { goal: 'general client work', client: '', nextAction: '' };
+    const skillName = 'angvey-methodology-lock';
+
+    let text = `---\n`;
+    text += `name: ${skillName}\n`;
+    text += `description: Force any agent to follow a disciplined Clarify → Plan → Execute → Verify workflow for solopreneur tasks. Use when starting work, switching agents, or when methodology drift is suspected. Locks evidence-before-claims and minimal verification.\n`;
+    text += `license: MIT\n`;
+    text += `metadata:\n`;
+    text += `  author: ANGVEY Finisher\n`;
+    text += `  version: v33\n`;
+    text += `  generated: ${new Date().toISOString()}\n`;
+    text += `---\n\n`;
+    text += `# ANGVEY Methodology Lock Skill (v33)\n\n`;
+    text += `**Purpose:** Kill methodology amnesia and skill drift. Inspired by obra/superpowers structured skills and the open Agent Skills (SKILL.md) standard. Ensures agents always clarify intent, plan with verification points, execute with evidence, and self-verify before claiming done.\n\n`;
+    text += `## Current Focus Boot\n`;
+    text += `- Primary task: ${focus.goal}${focus.client ? ` (client: ${focus.client})` : ''}\n`;
+    text += `- Next action: ${focus.nextAction || 'Not set'}\n`;
+    text += `- Open threads: ${openTasks.length}\n`;
+    text += `- Finish rate: ${finishRate}%\n\n`;
+    text += `## Active Locks\n`;
+    if (locks.length) {
+      locks.forEach(l => text += `- ${l.content}\n`);
+    } else text += `- No locks yet. Record hard rules in the Memory panel.\n`;
+
+    text += `\n## Mandatory Workflow (follow in order)\n`;
+    text += `1. **Clarify Intent:** Restate the goal in your own words. Ask 1-2 clarifying questions if ambiguity remains. Do not start work until confirmed.\n`;
+    text += `2. **Plan with Verification Points:** Break into 3-7 discrete steps. For each step list: expected output, how you will verify it, and residual risk. Prefer small, reversible steps.\n`;
+    text += `3. **Execute + Evidence:** Perform the work. After each major step, record concrete evidence (what you checked, actual result). Flag irreversible actions immediately.\n`;
+    text += `4. **Self-Verify Before Done:** Run the checklist: "What would prove this correct? Did I run the check? What is the real output?" Only then claim completion.\n`;
+    text += `5. **Handoff Packet:** End with a short summary: what was done, evidence produced, next action, and any open questions.\n\n`;
+    text += `## Iron Laws\n`;
+    text += `- Evidence before claims. Never say "done" or "fixed" without showing the check.\n`;
+    text += `- At most 1-2 human review points. Batch only high-irreversibility items.\n`;
+    text += `- Respect all locks above. If a lock conflicts with the request, surface it and stop.\n`;
+    text += `- Progressive disclosure: keep responses tight; expand only when asked.\n\n`;
+    text += `## Usage\n`;
+    text += `Paste this entire block into any agent that supports SKILL.md or custom instructions (Claude, Codex, Cursor, Grok, etc.). Or save as \`${skillName}/SKILL.md\` for agents that load skill folders.\n\n`;
+    text += `---\nGenerated by ANGVEY Finisher v33 · ${new Date().toISOString()}\n`;
+
+    copyPacket('Methodology Lock', text);
+  };
+
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
       <p className="subtitle">
-        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, irreversible-action uncertainty, cognitive-load, and now the Verification Tax.
-        One-click packets for any agent.
+        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, irreversible-action uncertainty, cognitive-load, Verification Tax, and now Methodology Amnesia / Skill Drift.
+        One-click packets (including portable SKILL.md) for any agent.
       </p>
 
       <div className="card brief">
@@ -213,9 +258,12 @@ export default function Home() {
           </>
         )}
 
-        <div style={{ marginTop: '1rem' }}>
+        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button onClick={generateVerificationBurden}>
             {copied === 'Verification Burden' ? 'Copied!' : 'Verification Burden Packet'}
+          </button>
+          <button onClick={generateMethodologyLock}>
+            {copied === 'Methodology Lock' ? 'Copied!' : 'Methodology Lock (SKILL.md)'}
           </button>
         </div>
       </div>
