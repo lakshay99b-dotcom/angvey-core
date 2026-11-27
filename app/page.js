@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v33';
+const STORAGE_KEY = 'angvey-finisher-v34';
 const LEGACY_KEYS = [
-  'angvey-finisher-v32', 'angvey-finisher-v31', 'angvey-finisher-v30', 'angvey-finisher-v29', 'angvey-finisher-v28', 'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
+  'angvey-finisher-v33', 'angvey-finisher-v32', 'angvey-finisher-v31', 'angvey-finisher-v30', 'angvey-finisher-v29', 'angvey-finisher-v28', 'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
   'angvey-finisher-v22', 'angvey-finisher-v21', 'angvey-finisher-v20', 'angvey-finisher-v19',
   'angvey-finisher-v18', 'angvey-finisher-v17', 'angvey-finisher-v16', 'angvey-finisher-v15',
   'angvey-finisher-v14', 'angvey-finisher-v13', 'angvey-finisher-v12', 'angvey-finisher-v11',
@@ -48,7 +48,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v33' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v34' }));
   }, [tasks, memory, log]);
 
   const addLog = (msg) => setLog(prev => [{ t: new Date().toISOString(), msg }, ...prev].slice(0, 50));
@@ -108,12 +108,12 @@ export default function Home() {
   const clients = [...new Set(tasks.map(t => t.client).filter(Boolean))];
 
   const exportData = () => {
-    const data = { tasks, log, memory, version: 'v33', exported: new Date().toISOString() };
+    const data = { tasks, log, memory, version: 'v34', exported: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `angvey-finisher-v33-${Date.now()}.json`;
+    a.download = `angvey-finisher-v34-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     addLog('Exported data');
@@ -222,12 +222,55 @@ export default function Home() {
     copyPacket('Methodology Lock', text);
   };
 
+  // Day 34: Research Grounding Packet — Kill Manual Research Paste Tax
+  const generateResearchGrounding = () => {
+    const locks = memory.filter(m => m.type === 'lock' || m.type === 'preference').slice(-6);
+    const focus = topOpen[0] || { goal: 'general client work', client: '', nextAction: '' };
+    const queries = [
+      `${focus.goal} current status or latest updates`,
+      focus.client ? `${focus.client} recent news or pricing` : 'competitor pricing comparison',
+      `${focus.goal} official documentation or primary sources`
+    ];
+
+    let text = `# ANGVEY Research Grounding Packet (v34)\n\n`;
+    text += `**Purpose:** Kill the Manual Research Paste Tax. Agents hallucinate on fresh web data (pricing, competitors, news, docs) or force humans to search + copy-paste every time. Inspired by Firecrawl skills (search/scrape/cite), Agent-Reach patterns, and evidence-before-claims discipline. This packet structures research so agents cite sources or request specific pastes with minimal friction.\n\n`;
+    text += `## Current Focus Boot\n`;
+    text += `- Primary task: ${focus.goal}${focus.client ? ` (client: ${focus.client})` : ''}\n`;
+    text += `- Next action: ${focus.nextAction || 'Not set'}\n`;
+    text += `- Open threads: ${openTasks.length}\n`;
+    text += `- Finish rate: ${finishRate}%\n\n`;
+    text += `## Active Locks\n`;
+    if (locks.length) {
+      locks.forEach(l => text += `- ${l.content}\n`);
+    } else text += `- None yet.\n`;
+
+    text += `\n## Suggested Research Queries\n`;
+    queries.forEach(q => text += `- ${q}\n`);
+
+    text += `\n## Strict Grounding Protocol (paste into any agent)\n`;
+    text += `1. **Tool First:** If you have web tools (search, scrape, Firecrawl, browser), use them. Cite every fact with URL + short snippet. Never invent numbers, dates, prices, or quotes.\n`;
+    text += `2. **If No Tools:** List the exact 1-3 searches or pages you need the human to paste. Provide a template: "Source N: URL | Key snippet | Relevance".\n`;
+    text += `3. **Output Structure:**\n`;
+    text += `   - Answer / Recommendation\n`;
+    text += `   - Sources (URL, date if available, confidence per source: High/Medium/Low)\n`;
+    text += `   - Assumptions & Gaps\n`;
+    text += `   - Irreversible risks flagged\n`;
+    text += `   - Next verification step\n`;
+    text += `4. **Confidence Rule:** Overall confidence only High if ≥2 independent primary sources agree. Otherwise Medium or Low and say what would raise it.\n`;
+    text += `5. **No Hallucination Zone:** If data is older than 30 days or unverified, mark it and recommend fresh check.\n\n`;
+    text += `## Usage\n`;
+    text += `Paste the full packet at the start of the agent session. After research, append any pasted sources under a "## Pasted Sources" section and re-ask for the grounded answer.\n\n`;
+    text += `---\nGenerated by ANGVEY Finisher v34 · ${new Date().toISOString()}\n`;
+
+    copyPacket('Research Grounding', text);
+  };
+
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
       <p className="subtitle">
-        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, irreversible-action uncertainty, cognitive-load, Verification Tax, and now Methodology Amnesia / Skill Drift.
-        One-click packets (including portable SKILL.md) for any agent.
+        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, irreversible-action uncertainty, cognitive-load, Verification Tax, Methodology Amnesia / Skill Drift, and now Manual Research Paste Tax.
+        One-click packets (including portable SKILL.md and Research Grounding) for any agent.
       </p>
 
       <div className="card brief">
@@ -264,6 +307,9 @@ export default function Home() {
           </button>
           <button onClick={generateMethodologyLock}>
             {copied === 'Methodology Lock' ? 'Copied!' : 'Methodology Lock (SKILL.md)'}
+          </button>
+          <button onClick={generateResearchGrounding}>
+            {copied === 'Research Grounding' ? 'Copied!' : 'Research Grounding Packet'}
           </button>
         </div>
       </div>

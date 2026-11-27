@@ -3,20 +3,20 @@
 **ANGVEY Core Product**  
 Daily-evolving AI solution targeting the most unique and highly pinching problems in the world.
 
-## Day 33 (26 Nov 2026) — Methodology Lock / Portable SKILL.md Packets: Kill Skill Drift
+## Day 34 (27 Nov 2026) — Research Grounding Packets: Kill the Manual Research Paste Tax
 
-Attacked methodology amnesia and skill drift: agents start following a good process but drift, or users must re-explain their preferred workflow every session or when switching tools. Superpowers (obra) and the open Agent Skills standard (SKILL.md) solve this for coding agents via structured, auto-triggering skills. Solopreneurs doing client work lack equivalent portable, one-click enforceable methodology packets.
+Attacked the Manual Research Paste Tax: agents either hallucinate on current web data (pricing, competitors, news, docs) or force solopreneurs to manually search, copy, and paste sources every session. Firecrawl (trending +1k stars/day) and Agent-Reach give coding agents eyes on the web; solopreneurs lack a one-click grounding protocol that works with or without tools.
 
-**Problem attacked:** Methodology Amnesia / Skill Drift. One-click generates a full SKILL.md (YAML frontmatter + structured Clarify→Plan→Execute→Verify workflow) tailored to current top task, locks, and finish state. Paste into any agent or save as a skill folder. Inspired by trending Superpowers skills framework and agentskills.io standard, combined with evidence-before-claims discipline.
+**Problem attacked:** Manual Research Paste Tax. One-click generates a Research Grounding Packet with suggested queries, strict cite-every-fact protocol (URL + snippet), confidence rules, and structured output. Paste into any agent. Inspired by Firecrawl skills (search/scrape/cite), evidence-before-claims, and Agent-Reach patterns.
 
 **What shipped:**
-- Storage bumped to v33 (auto-loads v32–v8)
-- New Methodology Lock (SKILL.md) Packet button in Daily Brief
-- Generates portable skill with frontmatter, boot view, locks, mandatory workflow, iron laws
-- Subtitle, export version, and vision updated
+- Storage bumped to v34 (auto-loads v33–v8)
+- New Research Grounding Packet button in Daily Brief
+- Generates packet with boot view, suggested queries, grounding protocol, source citation requirements, confidence rules
+- Subtitle, export version updated
 - Still zero-dependency, instant Vercel deploy
 
-Builds on Day 32 Verification Burden Killer Packets. Previous: Cognitive Load, Session Continuity, Attention Residue, Action Approval, Preference Drift Check, Restart Resume, Judgment Drain, Grill-Before-Act, Compliance Audit, Weekly Invoice Narratives, Mid-Day Resume, Day-Close/Start, Client-Ready Receipts, Finish Evidence, Next-Action Prompts, Client Resume, Portable Skill Cards.
+Builds on Day 33 Methodology Lock / SKILL.md Packets. Previous: Verification Burden, Cognitive Load, Session Continuity, Attention Residue, Action Approval, Preference Drift Check, Restart Resume, Judgment Drain, Grill-Before-Act, Compliance Audit, Weekly Invoice Narratives, Mid-Day Resume, Day-Close/Start, Client-Ready Receipts, Finish Evidence, Next-Action Prompts, Client Resume, Portable Skill Cards.
 
 ## How to run
 ```bash
@@ -26,4 +26,4 @@ npm run dev
 Deploy on Vercel: connect this repo (zero config). Suggested project name: angvey-finisher or angvey-core.
 
 ## Vision
-Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds, draft rework, verification tax, or methodology drift. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards and one-click packets (including Verification Burden Killer and Methodology Lock SKILL.md) make memory, discipline, and work state usable across any agent.
+Lightweight, production-ready tool that helps solopreneurs finish work without constant context rebuilds, draft rework, verification tax, methodology drift, or research paste tax. Eventually sellable as a focused "finish what you start" companion for AI-powered freelancers. Portable skill cards and one-click packets (including Verification Burden Killer, Methodology Lock SKILL.md, and Research Grounding) make memory, discipline, and work state usable across any agent.
