@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'angvey-finisher-v34';
+const STORAGE_KEY = 'angvey-finisher-v35';
 const LEGACY_KEYS = [
-  'angvey-finisher-v33', 'angvey-finisher-v32', 'angvey-finisher-v31', 'angvey-finisher-v30', 'angvey-finisher-v29', 'angvey-finisher-v28', 'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
+  'angvey-finisher-v34', 'angvey-finisher-v33', 'angvey-finisher-v32', 'angvey-finisher-v31', 'angvey-finisher-v30', 'angvey-finisher-v29', 'angvey-finisher-v28', 'angvey-finisher-v27', 'angvey-finisher-v26', 'angvey-finisher-v25', 'angvey-finisher-v24', 'angvey-finisher-v23',
   'angvey-finisher-v22', 'angvey-finisher-v21', 'angvey-finisher-v20', 'angvey-finisher-v19',
   'angvey-finisher-v18', 'angvey-finisher-v17', 'angvey-finisher-v16', 'angvey-finisher-v15',
   'angvey-finisher-v14', 'angvey-finisher-v13', 'angvey-finisher-v12', 'angvey-finisher-v11',
@@ -48,7 +48,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v34' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, memory, log, version: 'v35' }));
   }, [tasks, memory, log]);
 
   const addLog = (msg) => setLog(prev => [{ t: new Date().toISOString(), msg }, ...prev].slice(0, 50));
@@ -108,12 +108,12 @@ export default function Home() {
   const clients = [...new Set(tasks.map(t => t.client).filter(Boolean))];
 
   const exportData = () => {
-    const data = { tasks, log, memory, version: 'v34', exported: new Date().toISOString() };
+    const data = { tasks, log, memory, version: 'v35', exported: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `angvey-finisher-v34-${Date.now()}.json`;
+    a.download = `angvey-finisher-v35-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     addLog('Exported data');
@@ -265,12 +265,56 @@ export default function Home() {
     copyPacket('Research Grounding', text);
   };
 
+  // Day 35: Parallel Agent Scope Lock Packet — Kill Duplicate Work & Conflict Tax
+  const generateParallelScopeLock = () => {
+    const locks = memory.filter(m => m.type === 'lock' || m.type === 'preference').slice(-6);
+    const focus = topOpen[0] || { goal: 'general client work', client: '', nextAction: '' };
+    const openGoals = openTasks.slice(0, 4).map(t => t.goal);
+
+    let text = `# ANGVEY Parallel Agent Scope Lock Packet (v35)\n\n`;
+    text += `**Purpose:** Kill the Duplicate Work & Conflict Tax when running fleets of agents (Claude Code, Cursor, Codex, Grok, etc.). Inspired by Orca-style multi-bot orchestration and Superpowers structured workflows. Assigns non-overlapping scopes, forces unique ownership, and defines merge protocol with evidence.\n\n`;
+    text += `## Current Focus Boot\n`;
+    text += `- Primary task: ${focus.goal}${focus.client ? ` (client: ${focus.client})` : ''}\n`;
+    text += `- Next action: ${focus.nextAction || 'Not set'}\n`;
+    text += `- Open threads: ${openTasks.length}\n`;
+    text += `- Finish rate: ${finishRate}%\n`;
+    if (openGoals.length) text += `- Candidate scopes: ${openGoals.join(' | ')}\n`;
+    text += `\n`;
+    text += `## Active Locks\n`;
+    if (locks.length) {
+      locks.forEach(l => text += `- ${l.content}\n`);
+    } else text += `- None yet.\n`;
+
+    text += `\n## Scope Assignment Protocol (paste into each agent)\n`;
+    text += `1. **Unique Ownership:** Claim exactly one discrete sub-goal or file/module. Announce it first. Do not touch any other agent's claimed scope.\n`;
+    text += `2. **No Overlap Rule:** If your planned work intersects another claim, stop and propose a boundary split. Prefer vertical slices over horizontal.\n`;
+    text += `3. **Evidence-Only Handoff:** When done with your scope, output only: what changed, verification evidence, residual risks, and exact next owner if any. No speculative recommendations outside scope.\n`;
+    text += `4. **Merge Gate:** Human or designated lead merges only after all scopes report evidence. Conflicts resolved by locks + evidence, not opinion.\n`;
+    text += `5. **Cost Guard:** Prefer the agent with the best subscription/tooling for the scope. Do not re-research what another agent already grounded.\n\n`;
+    text += `## Output Template per Agent\n`;
+    text += `### Scope Claimed\n`;
+    text += `- Sub-goal / files:\n`;
+    text += `- Why this agent:\n`;
+    text += `### Evidence Produced\n`;
+    text += `- Changes / results:\n`;
+    text += `- Verification performed:\n`;
+    text += `- Confidence: High/Medium/Low\n`;
+    text += `### Handoff\n`;
+    text += `- Residual risk:\n`;
+    text += `- Ready for merge: yes/no\n\n`;
+    text += `## Usage\n`;
+    text += `Generate once, paste the protocol into every parallel agent session. Collect the filled templates and merge manually or with a final agent that only sees the evidence packets.\n\n`;
+    text += `---\nGenerated by ANGVEY Finisher v35 · ${new Date().toISOString()}\n`;
+
+    copyPacket('Parallel Scope Lock', text);
+  };
+
   return (
     <div className="container">
       <h1>ANGVEY Finisher</h1>
       <p className="subtitle">
-        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, irreversible-action uncertainty, cognitive-load, Verification Tax, Methodology Amnesia / Skill Drift, and now Manual Research Paste Tax.
-        One-click packets (including portable SKILL.md and Research Grounding) for any agent.
+        Persistent task + memory agent for solopreneurs. Kill context-switch, draft-rework, session-amnesia, judgment-drain, restart-replay, preference-drift, irreversible-action uncertainty, cognitive-load, Verification Tax, Methodology Amnesia / Skill Drift, Manual Research Paste Tax, and now Parallel Agent Duplicate Work & Conflict Tax.
+        One-click packets (including portable SKILL.md, Research Grounding, and Parallel Scope Lock) for any agent.
       </p>
 
       <div className="card brief">
@@ -310,6 +354,9 @@ export default function Home() {
           </button>
           <button onClick={generateResearchGrounding}>
             {copied === 'Research Grounding' ? 'Copied!' : 'Research Grounding Packet'}
+          </button>
+          <button onClick={generateParallelScopeLock}>
+            {copied === 'Parallel Scope Lock' ? 'Copied!' : 'Parallel Scope Lock Packet'}
           </button>
         </div>
       </div>
